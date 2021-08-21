@@ -3,6 +3,10 @@
 #include <utility>
 #include <vector>
 #include <set>
+#include <cassert>
+#include <limits>
+#include <algorithm>
+
 
 using namespace std;
 // Constructor.
@@ -10,10 +14,8 @@ Sudoku::Sudoku(int** grid)
         : numVarAssign {0}
         , grid {grid}
         , unassignedSet {}
-        ,
+        , fcTable {}
 {
-    // fcTable;
-
 };
 
 // Check if we're done solving.
@@ -47,7 +49,7 @@ bool Sudoku::backtrackSearch()
 
     vector<int> nextVarDomain = getNextValue(nextVar);
     unordered_map< pair<int,int>, vector<int> > backupTable = this->fcTable;
-    for (auto possibleAssign : nextVarDomain)
+    for (auto &possibleAssign : nextVarDomain)
     {
         this->numVarAssign++;
 
@@ -106,4 +108,107 @@ bool Sudoku::canPlace(pair<int,int> pos, int value)
     }
 
     return true;
+}
+
+vector<int> Sudoku::getNextValue(pair<int,int> pos) 
+{
+    vector<int> domainForPos = this->fcTable.at(pos);
+    vector<int> scores {};
+
+    for (auto & val : domainForPos)
+    {
+        int score = tryUpdateTable(pos,val);
+        scores.push_back(score);
+    }
+
+    vector<int> orderedDomain {};
+    while (!scores.empty())
+    {
+        int where = min_element(scores.begin(), scores.end()) - scores.begin();
+        orderedDomain.push_back(domainForPos.at(where));
+
+        scores.erase(scores.begin()+where);
+        domainForPos.erase(domainForPos.begin()+where);        
+    }
+
+    return domainForPos;
+}
+
+void Sudoku::updateCell(pair<int,int> pos, int value)
+{
+    this->grid[pos.first][pos.second] = value;
+}
+
+pair<int,int> Sudoku::getNextMCVar() // return (x,y) position
+{
+    // Applying most constraint variable
+    vector<pair<int,int>> constraintCanidates {};
+    int lowestScore = INT_MAX;
+    for (const auto pos : this->unassignedSet) 
+    {
+        if ((this->fcTable.at(pos)).size() < lowestScore)
+        {
+            constraintCanidates.clear();
+            constraintCanidates.push_back(pos);
+            lowestScore = (this->fcTable.at(pos)).size();
+        }
+        else if ((this->fcTable.at(pos)).size() == lowestScore)
+        {
+            constraintCanidates.push_back(pos);
+        }
+
+        if (constraintCanidates.size() == 1)
+        {
+            this->unassignedSet.erase(constraintCanidates.at(0));
+            return constraintCanidates.at(0);
+        }
+    }
+
+    // Applying most constraining variable
+    vector<pair<int,int>> constrainingCanidates {};
+    int highestConstraint = 0;
+    for (auto pos : constrainingCanidates) 
+    {
+        // Count 0's or constraints
+        // -3 because we are overcounting the pos 3 times : row col section
+        int constraintCount = -3;
+
+        // count row
+        for (int c = 0; c < 9; c++)
+        {
+           this->grid[pos.first][c] == 0 ? constraintCount++ : NULL ;
+        }
+
+        // count column
+        for (int r = 0; r < 9; r++)
+        {
+           this->grid[r][pos.second] == 0 ? constraintCount++ : NULL ;
+        }
+
+        // count section
+        int dx = 3*(pos.first/3), dy = 3*(pos.second/3);
+        for (int r = dx; r < dx+3; r++) 
+        {
+            for (int c = dy; c < dy+3; c++) 
+            {
+                this->grid[r][c] == 0 ? constraintCount++ : NULL ;
+            }
+        }
+
+        if (constraintCount > highestConstraint) 
+        {
+            constrainingCanidates.clear();
+            constrainingCanidates.push_back(pos);
+            highestConstraint = constraintCount;
+        }
+        else if (constraintCount == highestConstraint) 
+        {
+            constrainingCanidates.push_back(pos);
+        }
+
+        
+        pair<int,int> pick = constrainingCanidates.at(17%constrainingCanidates.size());
+        this->unassignedSet.erase(pick);
+        return pick;
+    }
 }

@@ -6,6 +6,7 @@
 #include <utility>
 #include <set>
 
+
 class Sudoku
 {
 public:
@@ -13,7 +14,7 @@ public:
     int ** grid; // [9][9]
     std::set<std::pair<int,int>>  unassignedSet;
     std::unordered_map<std::pair<int,int>, std::vector<int>> fcTable;
-
+ 
     Sudoku(int** grid);
     void solve();
     void display();
@@ -26,10 +27,10 @@ private:
     int tryUpdateTable(std::pair<int,int> pos, int value);
     void updateTable(std::pair<int,int> pos, int value);
 
-    int getNextMCVar();
-    int getNextValue(std::pair<int,int> pos);
+    pair<int,int> getNextMCVar();
+    vector<int> getNextValue(std::pair<int,int> pos);
 
-    void canPlace(std::pair<int,int> pos, int value);
+    bool canPlace(std::pair<int,int> pos, int value);
     void updateCell(std::pair<int,int> pos, int value);
     bool doneSolving();
 
