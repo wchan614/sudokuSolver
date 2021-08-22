@@ -15,11 +15,9 @@ Sudoku::Sudoku(int** grid)
         , grid {grid}
         , unassignedSet {}
         , fcTable {}
-{
-};
+{};
 
 // Check if we're done solving.
-// No zeros = done
 bool Sudoku::doneSolving() 
 {
     for (int r = 0; r < 9; r++) {
@@ -40,12 +38,10 @@ void Sudoku::revert(unordered_map<pair<int,int>, vector<int>> table, pair<int,in
 }
 
 bool Sudoku::backtrackSearch() 
-
 {
     if (doneSolving()) return true;
 
     pair<int,int> nextVar = getNextMCVar();
-
 
     vector<int> nextVarDomain = getNextValue(nextVar);
     unordered_map< pair<int,int>, vector<int> > backupTable = this->fcTable;
