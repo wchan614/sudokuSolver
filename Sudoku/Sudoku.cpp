@@ -6,6 +6,7 @@
 #include <cassert>
 #include <limits>
 #include <algorithm>
+#include <iterator>
 
 
 using namespace std;
@@ -15,9 +16,50 @@ Sudoku::Sudoku(int** grid)
         , grid {grid}
         , unassignedSet {}
         , fcTable {}
-{};
+{
+    constructTable();
+};
 
 // Check if we're done solving.
+void Sudoku::constructTable()
+{
+    set<pair<int,int>>::iterator it = this->unassignedSet.begin();
+    vector<int> domain = {1,2,3,4,5,6,7,8,9};
+    // Iterate till the end of set
+    while (it != this->unassignedSet.end())
+    {
+        pair<int,int> pos = *it;
+        int dx = pos.first, dy = pos.second;
+        for (int r = 0; r < 9 ; r++) 
+        {
+            auto search = domain.find(this->grid[pos.first][r]);
+            if (search != domain.end()) {
+                domain.erase(remove(domain.begin(), domain.end(), r), domain.end());
+            }
+        }
+
+        for (int c = 0; c < 9 ; c++) 
+        {
+            auto search = domain.find(this->grid[c][pos.second]);
+            if (search != domain.end()) {
+                domain.erase(remove(domain.begin(), domain.end(), r), domain.end());
+            }
+        }
+
+        for (int r = 3 * (dx / 3); r < 3 + 3 * (dx / 3) ; r++) 
+        {
+            for (int c = 3 * (dy / 3); 3 + 3 * (dy / 3); c++) 
+            {
+                auto search = domain.find(this->grid[r][c]);
+                if (search != domain.end()) {
+                    domain.erase(remove(domain.begin(), domain.end(), r), domain.end());
+                }
+            }
+        }
+        this->fcTable.at(pos) = domain;
+    }
+}
+
 bool Sudoku::doneSolving() 
 {
     for (int r = 0; r < 9; r++) {
@@ -208,3 +250,92 @@ pair<int,int> Sudoku::getNextMCVar() // return (x,y) position
         return pick;
     }
 }
+
+void Sudoku::updateTable(pair<int,int> pos, int value)
+{
+    pair<int,int> otherPos;
+    for(int r = 0; r < 9; r++) 
+    {
+        otherPos = pair{r, pos.second};
+        auto search = this->fcTable.find(otherPos);
+        if (r != pos.first && search != this->fcTable.end()) 
+        {
+            auto &table = this->fcTable.at(otherPos); 
+            table.erase(remove(table.begin(), table.end(), value), table.end());
+        }
+    }
+    for(int c = 0; c < 9; c++)
+    {
+        otherPos = pair{pos.first,c};
+        auto search = this->fcTable.find(otherPos);
+        if (c != pos.second && search != this->fcTable.end())
+        {
+            auto &table = this->facTable.at(otherPos);
+            table.erase(remove(table.begin(), table.end(), value), table.end());
+        }
+    }
+
+    int dx = pos.first, dy = pos.second;
+    for (int i = 3*(dx/3); i < 3+3*(dx/3); i++)
+    {
+        for (int j = 3*(dy/3); 3+3*(dy/3); j++)
+        {
+            pair<int,int> sectionPos = pair{i,j};
+            auto search = this->fcTable.find(sectionPos);
+            if (pos != sectionPos && search != this->fcTable.end())
+            {
+                auto &table = this->facTable.at(sectionPos);
+                table.erase(remove(table.begin(), table.end(), value), table.end());
+            }
+        }
+    } 
+}
+
+void Sudoku::tryUpdateTable(pair<int,int> pos, int value)
+{
+    int count  = 0;
+    for(int r = 0; r < 9; r++) 
+    {
+        otherPos = pair{r, pos.second};
+        auto search = this->fcTable.find(otherPos);
+        if (r != pos.first && search != this->fcTable.end()) 
+        {
+           count++;
+        }
+    }
+    for(int c = 0; c < 9; c++)
+    {
+        otherPos = pair{pos.first,c};
+        auto search = this->fcTable.find(otherPos);
+        if (c != pos.second && search != this->fcTable.end())
+        {
+            count++;
+        }
+    }
+
+    int dx = pos.first, dy = pos.second;
+    for (int i = 3*(dx/3); i < 3+3*(dx/3); i++)
+    {
+        for (int j = 3*(dy/3); 3+3*(dy/3); j++)
+        {
+            pair<int,int> sectionPos = pair{i,j};
+            auto search = this->fcTable.find(sectionPos);
+            if (pos != sectionPos && search != this->fcTable.end())
+            {
+                count++;
+            }
+        }
+    } 
+    return count;
+}
+
+bool Sudoku::isLegalTable()
+{
+    for(std::map<Key,Val>::iterator iter = this->fcTable.begin(); iter != this->fcTable.end(); ++iter)
+    {
+        if (iter->first == NULL || iter->second == NULL) {return false;}
+    }
+
+    return true;
+}
+
