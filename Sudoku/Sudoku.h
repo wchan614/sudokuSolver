@@ -27,8 +27,8 @@ private:
     int tryUpdateTable(std::pair<int,int> pos, int value);
     void updateTable(std::pair<int,int> pos, int value);
 
-    pair<int,int> getNextMCVar();
-    vector<int> getNextValue(std::pair<int,int> pos);
+    std::pair<int,int> getNextMCVar();
+    std::vector<int> getNextValue(std::pair<int,int> pos);
 
     bool canPlace(std::pair<int,int> pos, int value);
     void updateCell(std::pair<int,int> pos, int value);
